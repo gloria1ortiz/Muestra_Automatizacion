@@ -2,36 +2,41 @@ name: Hello World
 
 on:
   push:
+   name: "Hello World"
+
+on:
+  push:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
   hello:
     runs-on: ubuntu-latest
-
     steps:
-      # Paso 1: Obtener el código del repositorio
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      # Paso 2: Imprimir un saludo simple
       - name: Imprimir saludo
         run: echo "Hola desde GitHub Actions"
 
-      # Paso 3: Mostrar información del entorno
-      - name: Información del runner
+      - name: Informacion del runner
         run: |
-          echo "---Información del sistema---"
+          echo "---Informacion del sistema---"
           echo "Sistema operativo: $(uname -a)"
-          echo "Usuario actual: $(whoami)"
-          echo "Fecha y hora: $(date)"
-          echo "Directorio de trabajo: $(pwd)"
 
-      # Paso 4: Mostrar variables de contexto de GitHub
       - name: Variables de GitHub
         run: |
           echo "Repositorio: ${{ github.repository }}"
           echo "Usuario que activo el workflow: ${{ github.actor }}"
-          echo "Rama: ${{ github.ref_name }}"
-          echo "SHA del commit: ${{ github.sha }}"
-          echo "Evento que disparo el workflow: ${{ github.event_name }}"
+
+      # ESTE ES EL PASO QUE FALTA PARA TU CAPTURA 3 (Paso 6 de la guía)
+      - name: Verificar que el Secret esta configurado
+        env:
+          MI_PASSWORD: ${{ secrets.API_KEY }}
+        run: |
+          if [ -n "$MI_PASSWORD" ]; then
+            echo "El Secret 'API_KEY' fue detectado correctamente de forma segura por el pipeline."
+          else
+            echo "Error: No se encontro el Secret 'API_KEY'."
+            exit 1
+          fi
