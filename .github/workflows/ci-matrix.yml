@@ -1,38 +1,41 @@
-name: 02 - CI Pipeline con Matrix
+name: "02 - CI Pipeline con Matrix y Secrets"
 
 on: 
   push:
-     branches: [ main, develop ]
-  pull_requeset:   
-      branches:  [ main 
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  #  Job 1: Analizar la cantidad del código (Lint)
+  # Job 1: Analizar la calidad del código
   Lint:
     name: Análisis de calidad del código
     runs-on: ubuntu-latest
     steps:
-       - uses: actions/checkout@v4
-       - uses: actions/setup-python@v5
-         with:
-           python-version: '3.11'
-       - name: Instalar flake8
-         run:  pip install flake8
-       - name: Analizar código con flake8
-         run:  flake8 app. py test_app.py  --max-line-length=100
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Instalar flake8
+        run: pip install flake8
+        
+      - name: Analizar código con flake8
+        run: flake8 app.py test_app.py --max-line-length=100
 
-  #  Job 2: Ejecutar test en múltiples versiones de python 
+  # Job 2: Ejecutar test en múltiples versiones de python
   test:
     name: Test - Python ${{ matrix.python-version }}
-    needs: Lint    # sólo corre si el Lint fue exitoso
+    needs: Lint
     runs-on: ubuntu-latest
     
-   strategy:
-    matrizx:
-       python-version:   ['3.9',  '3.10', '3.11']
-    fail-fast:  false      # Si una versión falla, las otras continúan
+    strategy:
+      fail-fast: false      
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
 
-   steps:
+    steps:
       - uses: actions/checkout@v4
 
       - name: Configurar Python ${{ matrix.python-version }}
@@ -40,20 +43,29 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      -name: Instalar dependencias
-       run:  |
-         python -m pip install --upgrade pip
-         pip install pytest pytest-cov
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
 
-      -name: Ejecutar test con reporte de cobertrura
-       run: pytest test_app.py -v --cov=app --cov report=xml
+      - name: Ejecutar test con reporte de cobertura
+        run: pytest test_app.py -v --cov=app --cov-report=xml
 
-       -name: Subir reporte de cobertura como artefacto
-        run:  actions/upload-artifact@v4
+      # AQUÍ SE EVALÚA TU SECRET DE FORMA SEGURA (Paso 6 de la guía)
+      - name: Verificar que el Secret esta configurado
+        env:
+          MI_PASSWORD: ${{ secrets.API_KEY }}
+        run: |
+          if [ -n "$MI_PASSWORD" ]; then
+            echo "El Secret 'API_KEY' fue detectado correctamente por el pipeline."
+          else
+            echo "Error: No se encontro el Secret 'API_KEY'."
+            exit 1
+          fi
+
+      - name: Subir reporte de cobertura como artefacto
+        uses: actions/upload-artifact@v4
         with:
-           name: cobertura-python-${{ matrix.python-version }}
-           path: converage.xml
-           retention-days: 7
-          
-
-         
+          name: cobertura-python-${{ matrix.python-version }}
+          path: coverage.xml
+          retention-days: 7
