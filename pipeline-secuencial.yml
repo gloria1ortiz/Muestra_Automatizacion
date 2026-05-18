@@ -1,0 +1,64 @@
+name: "04 - Pipeline build, test y deploy"
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # ETAPA 1: Construir el paquete
+  build:
+    name: Construir paquete
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar herramienta de build
+        run: pip install build
+      - name: Construir el paquete
+        run: python -m build
+      - name: Guardar paquete como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: paquete-distribucion
+          path: dist/
+
+  # ETAPA 2: Ejecutar pruebas (espera a que build termine)
+  test:
+    name: Ejecutar pruebas
+    needs: build  # Solo corre si build fue exitoso
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pytest
+      - name: Ejecutar todas las pruebas
+        run: pytest test_app.py -v
+
+  # ETAPA 3: Desplegar (espera a que build y test terminen)
+  deploy:
+    name: Desplegar aplicacion
+    needs: [build, test]  # Espera a AMBOS jobs anteriores
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar el paquete construido
+        uses: actions/download-artifact@v4
+        with:
+          name: paquete-distribucion
+          path: dist/
+          
+      - name: Simular despliegue
+        run: |
+          echo '------------------------------------------------------------'
+          echo 'Desplegando version: ${{ github.sha }}'
+          echo 'Rama: ${{ github.ref_name }}'
+          echo 'Activado por: ${{ github.actor }}'
+          ls -la dist/
+          echo 'Despliegue completado exitosamente.'
+          echo '============================================================'
