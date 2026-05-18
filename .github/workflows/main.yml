@@ -1,0 +1,30 @@
+name: "04 - Pipeline build, test y deploy"
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Construir paquete
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simular Construccion
+        run: echo "¡Paquete construido con exito!"
+
+  test:
+    name: Ejecutar pruebas
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar pruebas
+        run: echo "¡Todas las pruebas pasaron exitosamente!"
+
+  deploy:
+    name: Desplegar aplicacion
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simular despliegue
+        run: echo "¡Despliegue completado exitosamente!"
