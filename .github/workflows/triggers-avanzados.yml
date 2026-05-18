@@ -1,0 +1,42 @@
+name: "06 - Triggers Avanzados"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Se ejecuta de forma automatica todos los dias a las 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: 'Ambiente de despliegue (dev, qa, prod)'
+        required: true
+        default: 'dev'
+      ejecutar_tests:
+        description: '¿Ejecutar pruebas unitarias? (true/false)'
+        required: true
+        default: 'true'
+
+jobs:
+  triggers_demo:
+    name: Demostracion de Triggers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Mostrar detalles del disparador
+        run: |
+          echo "============================================================"
+          echo "Evento que activo el robot: ${{ github.event_name }}"
+          echo "Rama actual: ${{ github.ref_name }}"
+          echo "============================================================"
+
+      - name: Mostrar parametros manuales
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Parametros ingresados manualmente:"
+          echo "-> Ambiente elegido: ${{ github.event.inputs.ambiente }}"
+          echo "-> Ejecutar pruebas: ${{ github.event.inputs.ejecutar_tests }}"
